@@ -46,5 +46,20 @@ def update_delete_posts(id):
                 return jsonify({"status": "success"}), 200
         return jsonify({"status": "error", "message": "Post not found"}), 404
 
+@app.route('/api/posts/search', methods=['get'])
+def search_posts():
+    for post in POSTS:
+        if request.args.get('key') == "title":
+            for post in POSTS:
+                if post['title'].lower().find(request.args.get('query').lower()) != -1:
+                    return jsonify(post)
+        elif request.args.get('key') == "content":
+            for post in POSTS:
+                if post['content'].lower().find(request.args.get('query').lower()) != -1:
+                    return jsonify(post)
+        else:
+            return jsonify({"status": "error", "message": "Invalid key"}), 400
+    return jsonify({}), 200
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5002, debug=True)
