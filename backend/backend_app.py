@@ -30,13 +30,21 @@ def get_add_posts():
         return jsonify(POSTS)
     return None
 
-@app.route('/api/posts/<int:id>', methods=['DELETE'])
-def delete_posts(id):
-    for post in POSTS:
-        if post['id'] == id:
-            POSTS.remove(post)
-            return jsonify({"status": "success"}), 200
-    return jsonify({"status": "error", "message": "Post not found"}), 404
+@app.route('/api/posts/<int:id>', methods=['DELETE', 'PUT'])
+def update_delete_posts(id):
+    if request.method == 'PUT':
+        for post in POSTS:
+            if post['id'] == id:
+                post.update(request.get_json())
+                return jsonify(post), 200
+        return jsonify({"status": "error", "message": "Post not found"}), 404
+
+    elif request.method == 'DELETE':
+        for post in POSTS:
+            if post['id'] == id:
+                POSTS.remove(post)
+                return jsonify({"status": "success"}), 200
+        return jsonify({"status": "error", "message": "Post not found"}), 404
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5002, debug=True)
