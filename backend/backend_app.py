@@ -10,7 +10,7 @@ POSTS = [
 ]
 
 @app.route('/api/posts', methods=['GET', 'POST'])
-def get_posts():
+def get_add_posts():
     if request.method == 'POST':
 
         try:
@@ -30,6 +30,13 @@ def get_posts():
         return jsonify(POSTS)
     return None
 
+@app.route('/api/posts/<int:id>', methods=['DELETE'])
+def delete_posts(id):
+    for post in POSTS:
+        if post['id'] == id:
+            POSTS.remove(post)
+            return jsonify({"status": "success"}), 200
+    return jsonify({"status": "error", "message": "Post not found"}), 404
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5002, debug=True)
