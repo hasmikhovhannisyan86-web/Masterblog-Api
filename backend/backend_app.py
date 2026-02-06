@@ -20,24 +20,36 @@ def get_add_posts():
             if not title or not content:
                 raise ValueError('Missing title or content')
 
-            POSTS.append({'id': len(POSTS) + 1, 'title': title, 'content': content})
+            new_id = max(post['id'] for post in POSTS) + 1 if POSTS else 1
+            POSTS.append({'id': new_id, 'title': title, 'content': content})
 
             return jsonify({"status": "success", "received": new_post}), 201
         except ValueError:
-            return jsonify({"status": "error", "message": "Invalid JSON"}), 400
+            return jsonify({"status": "error", "message": "Missing required fields: title and content"}), 400
 
     elif request.method == 'GET':
         return jsonify(POSTS)
-    return None
 
 @app.route('/api/posts/<int:id>', methods=['DELETE', 'PUT'])
 def update_delete_posts(id):
     if request.method == 'PUT':
-        for post in POSTS:
-            if post['id'] == id:
-                post.update(request.get_json())
-                return jsonify(post), 200
-        return jsonify({"status": "error", "message": "Post not found"}), 404
+        try:
+            update_data = request.get_json()
+            if not update_data:
+                raise ValueError('No data provided')
+
+            title = update_data.get('title')
+            content = update_data.get('content')
+            if not title or not content:
+                raise ValueError('Missing title or content')
+
+            for post in POSTS:
+                if post['id'] == id:
+                    post.update(update_data)
+                    return jsonify(post), 200
+            return jsonify({"status": "error", "message": "Post not found"}), 404
+        except ValueError:
+            return jsonify({"status": "error", "message": "Missing required fields: title and content"}), 400
 
     elif request.method == 'DELETE':
         for post in POSTS:
@@ -46,20 +58,24 @@ def update_delete_posts(id):
                 return jsonify({"status": "success"}), 200
         return jsonify({"status": "error", "message": "Post not found"}), 404
 
-@app.route('/api/posts/search', methods=['get'])
+@app.route('/api/posts/search', methods=['GET'])
 def search_posts():
-    for post in POSTS:
-        if request.args.get('key') == "title":
-            for post in POSTS:
-                if post['title'].lower().find(request.args.get('query').lower()) != -1:
-                    return jsonify(post)
-        elif request.args.get('key') == "content":
-            for post in POSTS:
-                if post['content'].lower().find(request.args.get('query').lower()) != -1:
-                    return jsonify(post)
-        else:
-            return jsonify({"status": "error", "message": "Invalid key"}), 400
-    return jsonify({}), 200
+    search_key = request.args.get('key')
+    query = request.args.get('query')
+
+    if not query:
+        return jsonify({"status": "error", "message": "Query parameter required"}), 400
+
+    results = []
+
+    if search_key == "title":
+        results = [post for post in POSTS if query.lower() in post['title'].lower()]
+    elif search_key == "content":
+        results = [post for post in POSTS if query.lower() in post['content'].lower()]
+    else:
+        return jsonify({"status": "error", "message": "Invalid key"}), 400
+
+    return jsonify(results), 200
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5002, debug=True)
